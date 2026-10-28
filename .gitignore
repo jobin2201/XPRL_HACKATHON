@@ -1,0 +1,100 @@
+# =====================================================================
+#  XPRL_HACKATHON - files that must never be committed
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. Secrets and credentials
+#    .env holds GROQ_API_KEY (used by api/v2.py for the AI explanations)
+# ---------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+service-account*.json
+.secrets/
+
+# ---------------------------------------------------------------------
+# 2. Competition data (large, and the organisers' data: do not redistribute)
+# ---------------------------------------------------------------------
+decode-and-detect-training-data/
+decode-and-detect-test-data/
+decode-and-detect-*/
+*.parquet
+
+# ---------------------------------------------------------------------
+# 3. Generated pipeline data, caches and trained models (rebuilt by the scripts)
+# ---------------------------------------------------------------------
+data/
+models/
+reports/
+*.joblib
+*.pkl
+*.pickle
+catboost_info/
+
+# outputs/ is all generated - except the leaderboard results typed in by hand
+outputs/*
+!outputs/site_results.json
+
+# ---------------------------------------------------------------------
+# 4. Submission files (prediction CSVs and code ZIPs, rebuilt by package_submission.py)
+# ---------------------------------------------------------------------
+submission/
+submission_v2/
+submission_v3/
+submissions/
+best_submission/
+submission*.csv
+predictions*.csv
+*.zip
+
+# ---------------------------------------------------------------------
+# 5. Python
+# ---------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+xrpl_env/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------------
+# 6. Frontend (Next.js) - frontend/.gitignore covers these too
+# ---------------------------------------------------------------------
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---------------------------------------------------------------------
+# 7. Logs, OS and editor files
+# ---------------------------------------------------------------------
+*.log
+logs/
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~

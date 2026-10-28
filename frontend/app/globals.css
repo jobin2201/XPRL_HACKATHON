@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+/* Two themes. Dark (default): a night-time console. Light: a clean daylight report.
+   The theme is set on <html data-theme="dark|light"> by the toggle in the top bar. */
+:root {
+  color-scheme: dark;
+  /* Dark: deep ocean night, teal + violet glow */
+  --bg: #060c18;
+  --panel: #0a1325;
+  --surface: #0d182c;
+  --surface-2: #13223b;
+  --hover: rgba(93, 211, 227, 0.07);
+  --border: rgba(148, 172, 205, 0.12);
+  --border-strong: rgba(148, 172, 205, 0.24);
+
+  --ink: #e9eff8;
+  --ink-2: #a9b8cc;
+  --muted: #74859e;
+  --accent: #5dd3e3;
+  --accent-strong: #22a8c2;
+
+  --grid: #18263f;
+  --axis: #2a3b58;
+
+  --s1: #22a8c2;
+  --s2: #e0652f;
+  --s3: #9a8cf0;
+
+  --critical: #ef5555;
+  --serious: #f08a5d;
+  --warning: #f5b62a;
+  --good: #2fc27a;
+  --low: #4c5d78;
+  --scroll: #24375a;
+  --glow: rgba(34, 168, 194, 0.22);
+  --shadow: rgba(0, 0, 0, 0.55);
+  --blob1: rgba(34, 168, 194, 0.20);
+  --blob2: rgba(154, 140, 240, 0.17);
+  --blob3: rgba(224, 101, 47, 0.10);
+  --dot: rgba(148, 172, 205, 0.10);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  /* Light: clear morning sky, crisp white cards, deep-teal accent */
+  --bg: #f3f7fc;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #ecf2fa;
+  --hover: rgba(10, 114, 135, 0.07);
+  --border: rgba(16, 38, 74, 0.10);
+  --border-strong: rgba(16, 38, 74, 0.20);
+
+  --ink: #0c1a2e;
+  --ink-2: #39495f;
+  --muted: #66768e;
+  --accent: #0a7287;
+  --accent-strong: #138fa8;
+
+  --grid: #e3eaf3;
+  --axis: #c4cfdd;
+
+  --s1: #138fa8;
+  --s2: #d4561f;
+  --s3: #6f60d6;
+
+  --critical: #c42f2f;
+  --serious: #c9541f;
+  --warning: #a86f00;
+  --good: #108a4a;
+  --low: #a9b6c8;
+  --scroll: #c4cfdd;
+  --glow: rgba(19, 143, 168, 0.16);
+  --shadow: rgba(16, 38, 74, 0.16);
+  --blob1: rgba(19, 143, 168, 0.16);
+  --blob2: rgba(111, 96, 214, 0.12);
+  --blob3: rgba(245, 165, 36, 0.12);
+  --dot: rgba(16, 38, 74, 0.07);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-hover: var(--hover);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-critical: var(--critical);
+  --color-serious: var(--serious);
+  --color-warning: var(--warning);
+  --color-good: var(--good);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* the page colour lives on <html>; <body> stays transparent so the parallax backdrop (z-index -10) shows */
+html {
+  background: var(--bg);
+  color: var(--ink);
+}
+body {
+  background: transparent;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+/* long hashes, wallet addresses and file paths wrap instead of spilling out of cards */
+.card-anim {
+  overflow-wrap: break-word;
+}
+.card-anim table td {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .card-anim table { font-size: 12px; }
+}
+
+/* desktop sidebar collapse (set on <html> before paint, so server and browser HTML match) */
+@media (min-width: 1024px) {
+  html[data-sidebar="collapsed"] .sb { width: 68px; }
+  html[data-sidebar="collapsed"] .sb-label { width: 0; opacity: 0; }
+  html[data-sidebar="collapsed"] .sb-fade { opacity: 0; }
+  html[data-sidebar="collapsed"] .sb-hide { display: none; }
+  html[data-sidebar="collapsed"] .sb-chevron { transform: rotate(180deg); }
+}
+
+/* smooth colour change when the theme switches (only colours, never layout) */
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition: background-color 0.45s ease, border-color 0.45s ease, color 0.45s ease, fill 0.45s ease, stroke 0.45s ease !important;
+}
+
+/* gentle entrance for cards and charts */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.rise-in { animation: rise-in 0.5s ease both; }
+
+/* theme toggle: stars twinkle at night, sun rays turn in the day */
+@keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.twinkle { animation: twinkle 2.2s ease-in-out infinite; }
+.spin-slow { animation: spin-slow 12s linear infinite; }
+/* page transition (app/template.tsx) */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(2px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.page-enter { animation: page-enter 0.55s cubic-bezier(.22, 1, .36, 1) both; }
+
+/* hero entrance + dotted grid */
+@keyframes hero-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.hero-in { animation: hero-in 0.6s ease both; }
+.hero-dots {
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(ellipse at 70% 30%, #000 30%, transparent 75%);
+}
+
+/* backdrop orbs drift slowly */
+@keyframes drift-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(60px, 40px) scale(1.08); } }
+@keyframes drift-b { 0%, 100% { transform: translate(0, 0) scale(1.05); } 50% { transform: translate(-50px, 30px) scale(0.95); } }
+.drift-a { animation: drift-a 22s ease-in-out infinite; }
+.drift-b { animation: drift-b 26s ease-in-out infinite; }
+@keyframes float-slow { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } }
+.float-slow { animation: float-slow 18s ease-in-out infinite; }
+
+/* cards: staggered entrance and a soft lift on hover */
+@keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.card-anim {
+  animation: card-in 0.55s cubic-bezier(.22, 1, .36, 1) both;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.card-anim:hover { border-color: var(--border-strong); box-shadow: 0 14px 34px -16px var(--shadow); }
+main .card-anim:nth-of-type(2) { animation-delay: 0.05s; }
+main .card-anim:nth-of-type(3) { animation-delay: 0.1s; }
+main .card-anim:nth-of-type(4) { animation-delay: 0.15s; }
+main .card-anim:nth-of-type(5) { animation-delay: 0.2s; }
+main .card-anim:nth-of-type(n + 6) { animation-delay: 0.25s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .hero-in, .drift-a, .drift-b, .float-slow, .card-anim { animation: none; }
+  .twinkle, .spin-slow, .rise-in { animation: none; }
+  html.theme-anim * { transition: none !important; }
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--glow);
+}
+
+* {
+  scrollbar-color: var(--scroll) transparent;
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.75);
+}
+
+/* recharts: keep focus rings off SVG wrappers */
+.recharts-wrapper,
+.recharts-surface {
+  outline: none;
+}

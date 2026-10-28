@@ -1,0 +1,10 @@
+{
+  "_how_to_use": "After uploading a model on the hackathon site, type its result here (score, and precision/recall as decimals, e.g. 0.90), save, and refresh the Models page. Leave null for models not uploaded yet.",
+  "v1": { "score": 44.7, "precision": 0.76, "recall": 0.24, "upload_folder": "outputs/competition (first upload)" },
+  "lightgbm_two_stage": { "score": 61.4, "precision": 0.90, "recall": 0.29, "upload_folder": "submission" },
+  "v2": { "score": null, "precision": null, "recall": null, "upload_folder": "submission_v2" },
+  "v3": { "score": null, "precision": null, "recall": null, "upload_folder": "submission_v3" },
+  "xgboost": { "score": null, "precision": null, "recall": null, "upload_folder": "submissions/xgboost" },
+  "catboost": { "score": null, "precision": null, "recall": null, "upload_folder": "submissions/catboost" },
+  "lightgbm": { "score": null, "precision": null, "recall": null, "upload_folder": "submissions/lightgbm_baseline" }
+}
