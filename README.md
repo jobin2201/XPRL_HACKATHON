@@ -36,8 +36,21 @@ suspicious ones rise to the top of an investigator's review list.
 ## 🤖 Model
 
 **LightGBM v2** (LightGBM + ratio, activity and pattern features): it gave the best validation score of every
-model we tried (XGBoost, CatBoost, logistic regression, Isolation Forest), runs in minutes on a laptop CPU and
+model we tried (XGBoost, CatBoost, Isolation Forest), runs in minutes on a laptop CPU and
 can show which features drove each score.
+
+| Model | Score (100 × AP) | Precision in top 1% | ROC-AUC | Accuracy |
+|---|---|---|---|---|
+| ⭐ **LightGBM v2** (+ ratios, activity, patterns) | **61.6** | **85.8%** | **0.908** | 98.10% |
+| LightGBM v3 (two-stage + patterns) | 61.2 | 84.3% | 0.897 | **98.23%** |
+| LightGBM two-stage | 56.9 | 82.6% | 0.891 | 97.71% |
+| LightGBM (base features) | 53.0 | 76.6% | 0.897 | 97.40% |
+| XGBoost | 52.5 | 76.1% | 0.899 | 97.38% |
+| CatBoost | 52.3 | 78.1% | 0.897 | 97.08% |
+| Isolation Forest (no labels) | 18.2 | 36.3% | 0.802 | – |
+
+<sub>Measured with grouped 5-fold validation on the training data. Accuracy is at each model's best-F1 threshold. Only 3.1% of
+payments are suspicious, so accuracy is high for every model; the score (Average Precision) is what separates them.</sub>
 
 ---
 
@@ -46,7 +59,7 @@ can show which features drove each score.
 ### Requirements
 
 - **Python 3.11** and **Node.js 20+**
-- The competition data (not included, the organisers' licence does not allow redistribution):
+- The competition data:
 
 ```
 XPRL_HACKATHON/
