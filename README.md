@@ -1,117 +1,159 @@
-# Ledgerwatch: XRPL suspicious-activity detection
+<div align="center">
 
-A Python detection pipeline plus a Next.js investigation dashboard for XRP Ledger accounts.
+# 🔎 Ledgerwatch
+
+### Finding money-laundering patterns in XRP Ledger payments
+
+**Decode & Detect hackathon · Team Code Gladiators**
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![LightGBM](https://img.shields.io/badge/Model-LightGBM%204.6-2a78d6)
+![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Dashboard-Next.js%2016-000000?logo=nextdotjs&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/jobin2201/XPRL_HACKATHON/blob/main/LICENSE)
+
+</div>
+
+---
+
+## 📌 What this project does
+
+A week of payments on a (synthetic) XRP Ledger hides **planted money-laundering patterns**: fan-outs, cycles,
+relay chains, layering and more. Ledgerwatch gives **every transaction a suspicion score from 0 to 1** so the
+suspicious ones rise to the top of an investigator's review list.
+
+| | Part | What it does |
+|---|---|---|
+| 🧠 | **Detection pipeline** (`src/`) | Joins the raw ledger files into one row per payment, builds ~190 behavioural features (activity bursts, fast forwarding, chains, cycles, one-off wallet pairs) and trains a LightGBM model |
+| 📊 | **Investigation dashboard** (`api/` + `frontend/`) | A FastAPI backend and a Next.js website to browse the scored payments, see *why* each one was flagged, explore the money-flow graph and compare models |
 
 ```
-data/raw/          input files (currently a SYNTHETIC sample)
-data/processed/    features, scores, alerts, model metadata, case decisions
-src/               pipeline: make_sample_data, load_data, features, train, predict, detect
-models/            trained random forest (model.joblib)
-outputs/           predictions.csv
-api/               FastAPI backend that serves the pipeline outputs
-frontend/          Next.js 16 + TypeScript + Tailwind dashboard
+ raw payments ──► join & value in USD ──► behavioural features ──► LightGBM ──► score 0–1 per payment
+                                                                        │
+                                                                        └──► dashboard: rank · explain · graph
 ```
 
-## Quick start (Windows)
+## 🤖 Model
+
+**LightGBM v2** (LightGBM + ratio, activity and pattern features): it gave the best validation score of every
+model we tried (XGBoost, CatBoost, logistic regression, Isolation Forest), runs in minutes on a laptop CPU and
+can show which features drove each score.
+
+---
+
+## 🚀 How to run
+
+### Requirements
+
+- **Python 3.11** and **Node.js 20+**
+- The competition data (not included, the organisers' licence does not allow redistribution):
+
+```
+XPRL_HACKATHON/
+├── decode-and-detect-training-data/train/   transactions.parquet · transfers.parquet · blocks.parquet · market_rates.csv · labels.csv
+└── decode-and-detect-test-data/             transactions.parquet · transfers.parquet · blocks.parquet · market_rates.csv
+```
+
+### 1️⃣ Install
 
 ```powershell
-cd F:\WORK\NEWPROJECTS\MPROJECTS\XPRL_HACKATHON
-.\run_dashboard.ps1            # starts the API on :8000 and the website on :3000
+python -m pip install -r requirements.txt
+python -m pip install xgboost catboost      # imported by the shared model module
+cd frontend; npm install; cd ..
 ```
 
-Then open http://localhost:3000. If another app already uses port 3000 on 127.0.0.1,
-open http://[::1]:3000 instead, or stop that app.
-
-## Environment
-
-Uses the existing conda env `xrpl_env` (`F:\ana\envs\xrpl_env`), which now also has FastAPI and uvicorn.
+### 2️⃣ Train the model and score the test data
 
 ```powershell
-F:\ana\envs\xrpl_env\python.exe -m pip install -r requirements.txt
-cd frontend; npm install
+python src/run_model.py --model lightgbm --extra ratios activity patterns --dashboard
 ```
 
-## 1. Run the pipeline
+➡️ Writes `outputs/models/lightgbm_activity_patterns_ratios/submission.csv` (`TRANSACTION_HASH,score`, 40,101 rows)
+plus the files the dashboard reads.
+
+### 3️⃣ Start the dashboard
+
+**One click (Windows):**
 
 ```powershell
-cd src
-$py = "F:\ana\envs\xrpl_env\python.exe"
-& $py make_sample_data.py   # ONLY for the synthetic sample; skip once you have the official files
-& $py load_data.py          # print schema + preview of each file
-& $py features.py           # -> data/processed/features.parquet
-& $py train.py              # -> models/model.joblib (validation ROC-AUC / PR-AUC)
-& $py predict.py            # -> outputs/predictions.csv (accounts not in labels.csv)
-& $py detect.py             # -> scores.parquet, alerts.json, model_meta.json
+.\run_dashboard.ps1
 ```
 
-`detect.py` is the explainable layer. It combines three detectors:
+It builds any missing model files, then opens the API and the website in two windows.
+The script uses the conda env path `F:\ana\envs\xrpl_env\python.exe`; change `$py` at the top if yours differs.
 
-| Detector | What it is |
-|---|---|
-| Supervised | Random forest probability. Out-of-fold for labelled accounts, so there is no leakage. |
-| Anomaly | Isolation Forest on log-scaled features, expressed as a percentile. |
-| Rules | Nine typology rules: structuring, fan-out, fan-in, round-tripping, rapid forwarding / peel chains, failed probing, odd-hour activity, fee spikes and dust. Each one records its evidence and example transactions. |
-
-The combined risk is `0.5 × model + 0.3 × rule_score/100 + 0.2 × anomaly`. An account is flagged
-at risk ≥ 0.40 or with a rule score of 30 or more.
-
-## 2. Run the website
+**Or by hand:**
 
 ```powershell
-# terminal 1, from the project root
-F:\ana\envs\xrpl_env\python.exe -m uvicorn api.main:app --port 8000
+# terminal 1 – API
+$env:TXMODEL_RUN = "lightgbm_activity_patterns_ratios"
+python -m uvicorn api.main:app --port 8000
 
-# terminal 2
+# terminal 2 – website
 cd frontend
 npm run dev
 ```
 
-After re-running the pipeline, restart the API or call `POST http://127.0.0.1:8000/api/reload`.
-
-| Page | What it shows |
+| Open | URL |
 |---|---|
-| 01 Overview | KPIs, activity over time, risk tiers, rule-trigger counts, score distribution, priority shortlist |
-| 02 Investigations | Filterable and sortable queue with risk, rule and anomaly scores, plus expandable reasons |
-| 03 Network Analysis | Force-directed money-flow graph with fan-out, fan-in, cycle and peel-chain highlights, click-to-inspect, and date and value filters |
-| 04 Transaction Explorer | Hash and address search, failed and dust filters, incoming and outgoing history, transaction detail |
-| 05 Case Details | Timeline, received vs sent, counterparties, rapid-forwarding evidence, rule-by-rule explanation, review / escalate / dismiss |
-| 06 Model Insights | Metrics, model card, feature importance, supervised-vs-anomaly scatter, rank agreement, disagreements, limitations |
+| 🖥️ Dashboard | http://localhost:3000 |
+| 📘 API docs | http://127.0.0.1:8000/docs |
 
-Analyst decisions are saved to `data/processed/case_status.json`.
+### Dashboard pages
 
-## Data (data/raw)
-
-The files there now are a **synthetic sample** made by `make_sample_data.py`, not the competition data.
-When you receive the official files, delete the sample files and copy the originals in unchanged.
-Adjust column names in `features.py` and `detect.py` if they differ, then re-run the pipeline.
-Also delete `data/processed/sample_hidden_test_labels.csv`, which only exists for the sample.
-
-| File | Sample columns |
+| Page | What you see |
 |---|---|
-| transactions.parquet | tx_hash, ledger_index, timestamp, tx_type, account, destination, amount, currency, fee, destination_tag, result |
-| transfers.parquet | tx_hash, hop, from_account, to_account, amount, currency, timestamp |
-| blocks.parquet | ledger_index, close_time, tx_count |
-| market_rates.csv | date, currency, usd_rate |
-| labels.csv | account, is_suspicious (labelled accounts only) |
+| 01 · **Dashboard** | Headline metrics, score distribution, activity over time, top suspicious payments |
+| 02 · **Transactions** | Ranked, filterable list; open a payment to see its legs, block, rate, wallet context and the top reasons behind its score |
+| 03 · **Network graph** | Wallet-to-wallet money flow around a payment or wallet |
+| 04 · **Models** | Every model trained, side by side |
+| 05 · **Validation** | Validation folds, leakage checks, feature importance, submission checks |
 
-The sample plants six typologies:
-- structuring just under 10k USD
-- fan-out bursts
-- fan-in collectors
-- night bursts with high fees and failures
-- round-tripping inside a ring
-- peel-chain pass-through mules
+---
 
-The scores are high because these patterns were planted on purpose. They say nothing about competition performance.
+## 🗂️ Project structure
 
-## Competition pipeline (official Decode & Detect data)
-
-Uses `decode-and-detect-training-data/` (train + labels, validation) and scores **one row per transaction**.
-
-```powershell
-F:\ana\envs\xrpl_env\python.exe src/competition.py                  # check run on validation/
-F:\ana\envs\xrpl_env\python.exe src/competition.py path\to\test-data  # real submission
+```
+XPRL_HACKATHON/
+│
+├── src/                              🧠 detection pipeline
+│   ├── tx_data.py                    load + join the 5 files → 1 row per payment (checked joins, USD values)
+│   ├── tx_features.py                ~134 behavioural features
+│   ├── tx_extra.py                   extra groups: ratios · activity · patterns
+│   ├── tx_patterns.py                pattern structure and pace around one-off payments
+│   ├── competition_max.py            model definitions (LightGBM / XGBoost / CatBoost)
+│   ├── run_model.py                  ⭐ main entry: validate → train → score test → check CSV
+│   ├── competition.py                shared helpers (metrics, leakage report)
+│   ├── compare_quick.py              feature cache + quick model comparison
+│   ├── lgbm_v3.py                    self-contained v3 pipeline (writes submission_v3/)
+│   ├── package_submission.py         builds predictions.csv + source_code.zip for upload
+│   ├── ex1…ex4_*.py, xrpl_common.py  exercises on real XRPL Mainnet data (public JSON-RPC, cached)
+│   └── make_sample_data.py, features.py, train.py, predict.py, detect.py
+│                                     early account-level prototype (random forest + rules + Isolation Forest)
+│
+├── api/                              ⚙️ FastAPI backend
+│   ├── main.py                       app, dataset/account endpoints, mounts v2
+│   └── v2.py                         /api/v2: summary, transactions, graph, models, datasets, explain
+│
+├── frontend/                         📊 Next.js 16 + TypeScript + Tailwind dashboard
+│   ├── app/                          pages: dashboard · flagged · graph · models · scoring · cases …
+│   ├── components/                   charts (Recharts), network graph (d3-force), layout
+│   └── lib/                          API client and formatting helpers
+│
+├── docs/                             project report (PDF)
+├── outputs/                          generated: model runs, submissions, caches (git-ignored)
+├── run_dashboard.ps1                 one-click start (Windows)
+├── requirements.txt                  Python dependencies
+├── SUBMISSION_README.md              README shipped inside the submission ZIP
+├── THIRD_PARTY.md                    libraries, data and AI assistance used
+└── LICENSE                           MIT
 ```
 
-Writes `outputs/competition/predictions_<split>.csv` (`TRANSACTION_HASH,score`). Runs in about 40 s on a laptop.
-5-fold AP on train: starter logistic regression 31.4, gradient boosting 72.6 (gradient boosting is used).
+---
+
+## 📄 License
+
+Released under the **[MIT License](https://github.com/jobin2201/XPRL_HACKATHON/blob/main/LICENSE)** · © 2026 Code Gladiators.
+See [`LICENSE`](LICENSE) in this repository.
+
+A detailed write-up is in [`docs/Ledgerwatch_Project_Report.pdf`](docs/Ledgerwatch_Project_Report.pdf).
